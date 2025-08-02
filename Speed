@@ -1,0 +1,73 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local speed = 16 -- velocidad inicial
+local minSpeed = 1
+local maxSpeed = 1000
+local increment = 5
+local interval = 0.1
+local holdingH = false
+local holdingJ = false
+
+-- Esperar al personaje
+local function getHumanoid()
+    local character = player.Character or player.CharacterAdded:Wait()
+    return character:WaitForChild("Humanoid")
+end
+
+-- Aplicar velocidad al Humanoid
+local function applySpeed()
+    local humanoid = getHumanoid()
+    humanoid.WalkSpeed = speed
+end
+
+-- Incrementar velocidad gradualmente
+task.spawn(function()
+    while true do
+        if holdingH then
+            speed = math.min(speed + increment, maxSpeed)
+            applySpeed()
+        elseif holdingJ then
+            speed = math.max(speed - increment, minSpeed)
+            applySpeed()
+        end
+        task.wait(interval)
+    end
+end)
+
+-- Detectar teclas presionadas
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
+        if input.KeyCode == Enum.KeyCode.H then
+            holdingH = true
+        elseif input.KeyCode == Enum.KeyCode.J then
+            holdingJ = true
+        elseif input.KeyCode == Enum.KeyCode.K then
+            speed = 16 -- velocidad por defecto
+            applySpeed()
+        end
+    end
+end)
+
+-- Detectar cuando se suelta la tecla
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.H then
+        holdingH = false
+    elseif input.KeyCode == Enum.KeyCode.J then
+        holdingJ = false
+    end
+end)
+
+-- Aplicar velocidad inicial
+player.CharacterAdded:Connect(function()
+    task.wait(0.1)
+    applySpeed()
+end)
+
+-- Si el personaje ya está cargado
+if player.Character then
+    applySpeed()
+end

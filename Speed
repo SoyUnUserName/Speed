@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local speed = 16
 local minSpeed = 1
-local maxSpeed = 10000
+local maxSpeed = 1000
 local interval = 0.1
 local holdThreshold = 0.5
 
@@ -50,7 +50,7 @@ local function getDecrement()
     end
 end
 
--- Loop para ajustar velocidad
+-- Loop para mantener presionado
 task.spawn(function()
     while true do
         local currentTime = tick()
@@ -78,9 +78,21 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if input.KeyCode == Enum.KeyCode.H then
             holdingH = true
             holdStartTimeH = tick()
+
+            -- Aumento inmediato al presionar
+            local inc = getIncrement()
+            speed = math.min(speed + inc, maxSpeed)
+            applySpeed()
+
         elseif input.KeyCode == Enum.KeyCode.J then
             holdingJ = true
             holdStartTimeJ = tick()
+
+            -- Disminución inmediata al presionar
+            local dec = getDecrement()
+            speed = math.max(speed - dec, minSpeed)
+            applySpeed()
+
         elseif input.KeyCode == Enum.KeyCode.K then
             speed = 16
             applySpeed()

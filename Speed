@@ -3,13 +3,16 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local speed = 16 -- velocidad inicial
+local speed = 16
 local minSpeed = 1
-local maxSpeed = 1000
-local increment = 5
+local maxSpeed = 10000
 local interval = 0.1
+local holdThreshold = 0.5
+
 local holdingH = false
 local holdingJ = false
+local holdStartTimeH = 0
+local holdStartTimeJ = 0
 
 -- Esperar al personaje
 local function getHumanoid()
@@ -17,23 +20,54 @@ local function getHumanoid()
     return character:WaitForChild("Humanoid")
 end
 
--- Aplicar velocidad al Humanoid
+-- Aplicar velocidad
 local function applySpeed()
     local humanoid = getHumanoid()
     humanoid.WalkSpeed = speed
 end
 
--- Incrementar velocidad gradualmente
+-- Determinar incremento dinámico
+local function getIncrement()
+    if speed < 500 then
+        return 5
+    elseif speed < 700 then
+        return 10
+    else
+        return 100
+    end
+end
+
+-- Determinar decremento dinámico
+local function getDecrement()
+    if speed > 700 then
+        return 100
+    elseif speed > 500 then
+        return 50
+    elseif speed > 100 then
+        return 5
+    else
+        return 1
+    end
+end
+
+-- Loop para ajustar velocidad
 task.spawn(function()
     while true do
-        if holdingH then
-            speed = math.min(speed + increment, maxSpeed)
+        local currentTime = tick()
+
+        if holdingH and currentTime - holdStartTimeH >= holdThreshold then
+            local inc = getIncrement()
+            speed = math.min(speed + inc, maxSpeed)
             applySpeed()
-        elseif holdingJ then
-            speed = math.max(speed - increment, minSpeed)
+            task.wait(interval)
+        elseif holdingJ and currentTime - holdStartTimeJ >= holdThreshold then
+            local dec = getDecrement()
+            speed = math.max(speed - dec, minSpeed)
             applySpeed()
+            task.wait(interval)
+        else
+            task.wait(0.05)
         end
-        task.wait(interval)
     end
 end)
 
@@ -43,10 +77,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
         if input.KeyCode == Enum.KeyCode.H then
             holdingH = true
+            holdStartTimeH = tick()
         elseif input.KeyCode == Enum.KeyCode.J then
             holdingJ = true
+            holdStartTimeJ = tick()
         elseif input.KeyCode == Enum.KeyCode.K then
-            speed = 16 -- velocidad por defecto
+            speed = 16
             applySpeed()
         end
     end
@@ -56,8 +92,10 @@ end)
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.H then
         holdingH = false
+        holdStartTimeH = 0
     elseif input.KeyCode == Enum.KeyCode.J then
         holdingJ = false
+        holdStartTimeJ = 0
     end
 end)
 
@@ -67,7 +105,6 @@ player.CharacterAdded:Connect(function()
     applySpeed()
 end)
 
--- Si el personaje ya está cargado
 if player.Character then
     applySpeed()
 end

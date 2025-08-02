@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 
@@ -15,18 +16,50 @@ label.Name = "VelocidadLabel"
 label.Size = UDim2.new(0, 200, 0, 30)
 label.Position = UDim2.new(0, 10, 1, -40) -- esquina inferior izquierda
 label.BackgroundTransparency = 1
-label.TextColor3 = Color3.new(1, 0, 0) -- rojo
+label.TextColor3 = Color3.new(1, 0, 0) -- rojo inicial
 label.Font = Enum.Font.SourceSansBold
 label.TextSize = 20
 label.Text = "Vel = 0"
 label.Parent = gui
+
+-- Variables para transición de color
+local currentColor = label.TextColor3
+local lastUpdate = 0
+
+-- Función para obtener color según velocidad
+local function getColorForSpeed(speed)
+    if speed <= 100 then
+        return Color3.fromRGB(0, 255, 0) -- verde
+    elseif speed <= 500 then
+        return Color3.fromRGB(255, 255, 0) -- amarillo
+    elseif speed < 1000 then
+        return Color3.fromRGB(255, 165, 0) -- naranja
+    else
+        return Color3.fromRGB(255, 0, 0) -- rojo
+    end
+end
 
 -- Actualizar velocidad constantemente
 RunService.RenderStepped:Connect(function()
     local character = player.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         local velocity = character.HumanoidRootPart.Velocity
-        local speed = math.floor(velocity.Magnitude * 10) / 10 -- redondear a 1 decimal
+        local speed = math.floor(velocity.Magnitude * 10) / 10
         label.Text = "Vel = " .. speed
+
+        -- Actualizar color suavemente cada 0.3 segundos
+        local now = tick()
+        if now - lastUpdate >= 0.3 then
+            lastUpdate = now
+            local targetColor = getColorForSpeed(speed)
+
+            if targetColor ~= currentColor then
+                local tween = TweenService:Create(label, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    TextColor3 = targetColor
+                })
+                tween:Play()
+                currentColor = targetColor
+            end
+        end
     end
 end)

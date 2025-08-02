@@ -120,3 +120,42 @@ end)
 if player.Character then
     applySpeed()
 end
+-- Mostrar emblema de ejecución
+local function showExecutionBadge()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ExecutionBadge"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 300, 0, 50)
+    frame.Position = UDim2.new(0.5, -150, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    frame.BorderSizePixel = 0
+    frame.BackgroundTransparency = 0.2
+    frame.AnchorPoint = Vector2.new(0.5, 0)
+    frame.Parent = screenGui
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "✅ Este script se ha ejecutado"
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextScaled = true
+    textLabel.Parent = frame
+
+    -- Desvanecer después de unos segundos
+    task.delay(3, function()
+        for i = 0, 1, 0.05 do
+            frame.BackgroundTransparency = 0.2 + i
+            textLabel.TextTransparency = i
+            task.wait(0.05)
+        end
+        screenGui:Destroy()
+    end)
+end
+
+-- Llamar al emblema al iniciar
+showExecutionBadge()
+

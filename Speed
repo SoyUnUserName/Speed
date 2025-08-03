@@ -1,18 +1,16 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
-local speed = 16
+local speed = 16 -- velocidad inicial
 local minSpeed = 1
 local maxSpeed = 1000
+local increment = 5
 local interval = 0.1
-local holdThreshold = 0.5
-
 local holdingH = false
 local holdingJ = false
-local holdStartTimeH = 0
-local holdStartTimeJ = 0
 
 -- Esperar al personaje
 local function getHumanoid()
@@ -20,54 +18,23 @@ local function getHumanoid()
     return character:WaitForChild("Humanoid")
 end
 
--- Aplicar velocidad
+-- Aplicar velocidad al Humanoid
 local function applySpeed()
     local humanoid = getHumanoid()
     humanoid.WalkSpeed = speed
 end
 
--- Determinar incremento dinámico
-local function getIncrement()
-    if speed < 500 then
-        return 5
-    elseif speed < 700 then
-        return 10
-    else
-        return 100
-    end
-end
-
--- Determinar decremento dinámico
-local function getDecrement()
-    if speed > 700 then
-        return 100
-    elseif speed > 500 then
-        return 50
-    elseif speed > 100 then
-        return 5
-    else
-        return 1
-    end
-end
-
--- Loop para mantener presionado
+-- Incrementar velocidad gradualmente
 task.spawn(function()
     while true do
-        local currentTime = tick()
-
-        if holdingH and currentTime - holdStartTimeH >= holdThreshold then
-            local inc = getIncrement()
-            speed = math.min(speed + inc, maxSpeed)
+        if holdingH then
+            speed = math.min(speed + increment, maxSpeed)
             applySpeed()
-            task.wait(interval)
-        elseif holdingJ and currentTime - holdStartTimeJ >= holdThreshold then
-            local dec = getDecrement()
-            speed = math.max(speed - dec, minSpeed)
+        elseif holdingJ then
+            speed = math.max(speed - increment, minSpeed)
             applySpeed()
-            task.wait(interval)
-        else
-            task.wait(0.05)
         end
+        task.wait(interval)
     end
 end)
 
@@ -77,24 +44,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.RightControl) then
         if input.KeyCode == Enum.KeyCode.H then
             holdingH = true
-            holdStartTimeH = tick()
-
-            -- Aumento inmediato al presionar
-            local inc = getIncrement()
-            speed = math.min(speed + inc, maxSpeed)
-            applySpeed()
-
         elseif input.KeyCode == Enum.KeyCode.J then
             holdingJ = true
-            holdStartTimeJ = tick()
-
-            -- Disminución inmediata al presionar
-            local dec = getDecrement()
-            speed = math.max(speed - dec, minSpeed)
-            applySpeed()
-
         elseif input.KeyCode == Enum.KeyCode.K then
-            speed = 16
+            speed = 16 -- velocidad por defecto
             applySpeed()
         end
     end
@@ -104,10 +57,8 @@ end)
 UserInputService.InputEnded:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.H then
         holdingH = false
-        holdStartTimeH = 0
     elseif input.KeyCode == Enum.KeyCode.J then
         holdingJ = false
-        holdStartTimeJ = 0
     end
 end)
 
@@ -117,45 +68,18 @@ player.CharacterAdded:Connect(function()
     applySpeed()
 end)
 
+-- Si el personaje ya está cargado
 if player.Character then
     applySpeed()
 end
--- Mostrar emblema de ejecución
-local function showExecutionBadge()
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ExecutionBadge"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = player:WaitForChild("PlayerGui")
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 50)
-    frame.Position = UDim2.new(0.5, -150, 0.1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BorderSizePixel = 0
-    frame.BackgroundTransparency = 0.2
-    frame.AnchorPoint = Vector2.new(0.5, 0)
-    frame.Parent = screenGui
-
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = "✅ Este script se ha ejecutado"
-    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextScaled = true
-    textLabel.Parent = frame
-
-    -- Desvanecer después de unos segundos
-    task.delay(3, function()
-        for i = 0, 1, 0.05 do
-            frame.BackgroundTransparency = 0.2 + i
-            textLabel.TextTransparency = i
-            task.wait(0.05)
-        end
-        screenGui:Destroy()
-    end)
-end
-
--- Llamar al emblema al iniciar
-showExecutionBadge()
-
+-- Mostrar notificación de ejecución
+StarterGui:SetCore("SendNotification",{Title="Espera",Text="Verificando ",Duration=3})
+wait(4)
+StarterGui:SetCore("SendNotification",{Title="Ejecutado",Text="Con exito✅ 🚗",Duration=3})
+wait(3)
+StarterGui:SetCore("SendNotification",{Title="Ctrl+H = Aumenta la velocidad",Text="Limite de 1000",Duration=6})
+wait(6)
+StarterGui:SetCore("SendNotification",{Title="Ctrl+J Baja la Speed",Text="Limite de 1",Duration=6})
+wait(8)
+StarterGui:SetCore("SendNotification",{Title="Ctrl+K= Aumenta la velocidad",Text="Restable el speed",Duration=6})
